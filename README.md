@@ -1,17 +1,12 @@
-## ngx_buf基本介绍
+## 基本介绍
 
 nginx的缓冲区结构，贯穿了整个nginx。
 
 > * 缓冲区ngx_buf_t是处理大数据块的关键结构
 > * 可用于内存数据和磁盘数据
-> * Nginx缓冲区，主要用来存储非常大块内存 内存池的pool->chain结构
+> * Nginx缓冲区，主要用来存储非常大块内存（内存池的pool->chain结构）
 
-## 定义
-* off_t类型用于指示文件的偏移量，常就是long类型，其默认为一个32位的整数
-* 在gcc编译中会被编译为long int类型
-* 在64位的Linux系统中则会被编译为long long int，这是一个64位的整数
-* 其定义在unistd.h头文件中可以查看
-
+## 数据结构定义
 这里需要注意的是：
 * 缓冲区主要用来存储非常大的内存块，在内存池的pool->chain结构上；
 * 既可处理内存数据，也可以处理磁盘数据；
@@ -22,7 +17,7 @@ nginx的缓冲区结构，贯穿了整个nginx。
 typedef struct ngx_buf_s  ngx_buf_t;
 // Nginx缓冲区，主要用来存储非常大块内存 内存池的pool->chain结构
 
-// off_t类型用于指示文件的偏移量，常就是long类型，其默认为一个32位的整数
+// off_t类型用于指示文件的偏移量，就是long类型，其默认为一个32位的整数
 // 在gcc编译中会被编译为long int类型
 // 在64位的Linux系统中则会被编译为long long int，这是一个64位的整数
 // 其定义在unistd.h头文件中可以查看
@@ -90,7 +85,9 @@ struct ngx_chain_s { // 链表(放在内存池上) 内存池的pool->chain结构
 第二个参数是缓冲区大小
 
 并标记为内存可修改 ```b->temporary = 1;```
+
 ```ngx_palloc``` 是用来分配内存的，分析内存池的文章有提及
+
 ```c
 ngx_buf_t *
 ngx_create_temp_buf(ngx_pool_t *pool, size_t size)  // 创建一个缓冲区  @param1(在内存池上创建) @param2 缓冲区大小
@@ -130,7 +127,9 @@ ngx_create_temp_buf(ngx_pool_t *pool, size_t size)  // 创建一个缓冲区  @p
 
 ### 创建缓冲区链表
 必须有一种结构来管理缓冲区（最好是链表），不然无法回收
+
 内存池上的chain字段 ，被清空的ngx_chain_t结构都会放在pool->chain缓冲链上
+
 ```c
 // 必须有链表结构来管理ngx_buf_t，不然无法回收
 ngx_chain_t *
@@ -157,10 +156,15 @@ ngx_alloc_chain_link(ngx_pool_t *pool)  // 创建链表结构
 
 ### 创建多个缓冲区
 这里重点说下代码后部分的尾插法。
-* ll是二级指针
-* ll记录前一次循环的&cl->next （记录了这次循环的cl的next的地址）
-* 下一次循环 *ll = cl 将 &cl->next 上的值改为 cl （改变了上一次循环的cl的next的地址上的值，也就是改变了上一次循环cl的next的值，就是改变了上一次循环的next，让其指向当前的cl）
-* 这样就将上一次循环的next指向当前循环的cl
+
+ll是二级指针
+
+ll记录前一次循环的&cl->next （记录了这次循环的cl的next的地址）
+
+下一次循环 *ll = cl 将 &cl->next 上的值改为 cl （改变了上一次循环的cl的next的地址上的值，也就是改变了上一次循环cl的next的值，就是改变了上一次循环的next，让其指向当前的cl）
+
+这样就将上一次循环的next指向当前循环的cl
+
 ```c
 // 创建多个buf
 /*
@@ -234,7 +238,9 @@ ngx_create_chain_of_bufs(ngx_pool_t *pool, ngx_bufs_t *bufs)
 ```
 
 ### 将其他缓冲区链表放到已有缓冲区链表的尾部
+
 拿到 *chain 链表最后一个节点的地址，然后使用上面说的尾插法，一个一个地将缓冲区插入到 *chain 链表最后一个节点后
+
 ```c
 // 将其他缓冲区链表放到已有缓冲区链表的尾部
 ngx_int_t
@@ -299,7 +305,9 @@ ngx_chain_get_free_buf(ngx_pool_t *p, ngx_chain_t **free)
 ```
 
 ### 释放缓冲区链表
+
 释放掉的cl归还到 pool->chain 上
+
 ```c
 /*
 #define ngx_free_chain(pool, cl)                                             \
